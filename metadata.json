@@ -1,0 +1,5 @@
+{
+  "name": "Local Business Lead Finder",
+  "description": "An application to discover local businesses by type and location, conduct in-depth AI-powered research on them, and export the findings as a CSV for outreach and tracking.",
+  "requestFramePermissions": []
+}
