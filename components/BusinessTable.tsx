@@ -6,23 +6,33 @@ import { Loader } from './Loader';
 interface BusinessTableProps {
   businesses: Business[];
   onRetryResearch: (businessId: string) => void;
+  highlightedBusinessId: string | null;
+  onHighlight: (businessId: string | null) => void;
 }
 
 const Shimmer: React.FC = () => (
     <div className="animate-pulse bg-gray-200 h-4 rounded-md w-full"></div>
 );
 
-export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetryResearch }) => {
+export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetryResearch, highlightedBusinessId, onHighlight }) => {
   if (businesses.length === 0) {
     return null;
   }
+  
+  const handleMouseEnter = (id: string) => onHighlight(id);
+  const handleMouseLeave = () => onHighlight(null);
 
   return (
     <>
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
         {businesses.map((business) => (
-          <div key={business.id} className="bg-white rounded-xl shadow-md p-4 space-y-4">
+          <div 
+            key={business.id} 
+            className={`bg-white rounded-xl shadow-md p-4 space-y-4 transition-all duration-200 ${highlightedBusinessId === business.id ? 'ring-2 ring-blue-500 scale-105' : ''}`}
+            onMouseEnter={() => handleMouseEnter(business.id)}
+            onMouseLeave={handleMouseLeave}
+          >
             {/* Header */}
             <div className="flex justify-between items-start">
               <div className="flex-grow pr-4">
@@ -94,7 +104,7 @@ export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetr
 
       {/* Desktop Table View */}
       <div className="hidden md:block bg-white rounded-xl shadow-md overflow-hidden">
-        <table className="min-w-full w-full divide-y divide-gray-200">
+        <table className="min-w-full w-full divide-y divide-gray-200 table-fixed">
           <thead className="bg-gray-50">
             <tr>
               <th scope="col" className="w-[20%] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -119,7 +129,12 @@ export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetr
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {businesses.map((business) => (
-              <tr key={business.id} className="hover:bg-gray-50 transition-colors duration-150">
+              <tr 
+                key={business.id} 
+                className={`transition-colors duration-150 ${highlightedBusinessId === business.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                onMouseEnter={() => handleMouseEnter(business.id)}
+                onMouseLeave={handleMouseLeave}
+              >
                 <td className="px-6 py-4 align-top">
                   {business.isResearching ? (
                     <div className="space-y-2">

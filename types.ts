@@ -21,6 +21,8 @@ export interface Business {
   isResearching: boolean;
   areaSearched: string;
   businessType: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface BusinessDiscovery {
