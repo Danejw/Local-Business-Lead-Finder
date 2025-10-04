@@ -197,9 +197,9 @@ const App: React.FC = () => {
                     Export to CSV
                 </button>
             </div>
-            <div className="flex flex-col xl:flex-row gap-8">
+            <div className="space-y-8">
               {googleMapsApiKey && (
-                  <div className="xl:w-1/4 w-full h-96 xl:h-auto rounded-xl shadow-md overflow-hidden">
+                  <div className="w-full h-96 rounded-xl shadow-md overflow-hidden">
                     <BusinessMap 
                       apiKey={googleMapsApiKey} 
                       businesses={businesses} 
@@ -208,7 +208,7 @@ const App: React.FC = () => {
                     />
                   </div>
               )}
-              <div className={googleMapsApiKey ? "xl:w-3/4 w-full" : "w-full"}>
+              <div className="w-full">
                 <BusinessTable 
                     businesses={businesses} 
                     onRetryResearch={handleRetryResearch}
