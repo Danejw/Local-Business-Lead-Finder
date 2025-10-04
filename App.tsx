@@ -186,7 +186,7 @@ const App: React.FC = () => {
         )}
 
         {(isLoading || businesses.length > 0) && (
-          <div className="max-w-7xl mx-auto mt-8">
+          <div className="w-full mt-8">
              <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
                <h3 className="text-lg font-semibold text-gray-700">{researchMessage}</h3>
                 <button
@@ -197,9 +197,9 @@ const App: React.FC = () => {
                     Export to CSV
                 </button>
             </div>
-            <div className="flex flex-col lg:flex-row gap-8">
+            <div className="flex flex-col xl:flex-row gap-8">
               {googleMapsApiKey && (
-                  <div className="lg:w-1/3 w-full h-96 lg:h-auto rounded-xl shadow-md overflow-hidden">
+                  <div className="xl:w-1/4 w-full h-96 xl:h-auto rounded-xl shadow-md overflow-hidden">
                     <BusinessMap 
                       apiKey={googleMapsApiKey} 
                       businesses={businesses} 
@@ -208,7 +208,7 @@ const App: React.FC = () => {
                     />
                   </div>
               )}
-              <div className={googleMapsApiKey ? "lg:w-2/3 w-full" : "w-full"}>
+              <div className={googleMapsApiKey ? "xl:w-3/4 w-full" : "w-full"}>
                 <BusinessTable 
                     businesses={businesses} 
                     onRetryResearch={handleRetryResearch}

@@ -67,6 +67,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading }) =
                 disabled={isLoading}
                 className="w-full h-full appearance-none pl-3 pr-8 py-3 text-gray-700 bg-gray-100 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
+                <option value="1">Top 1</option>
                 <option value="5">Top 5</option>
                 <option value="10">Top 10</option>
                 <option value="15">Top 15</option>
