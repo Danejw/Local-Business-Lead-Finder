@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
-import { SearchForm } from './components/SearchForm';
+import { MapSearchForm } from './components/MapSearchForm';
 import { BusinessTable } from './components/BusinessTable';
-import { BusinessMap } from './components/BusinessMap';
 import { findBusinessesStream, researchBusiness, geocodeAddress } from './services/geminiService';
+import { searchPlacesInArea, getPlaceDetails, SearchArea } from './services/placesService';
 import { Business, BusinessStatus } from './types';
 
 const App: React.FC = () => {
@@ -23,15 +23,26 @@ const App: React.FC = () => {
 
   const processResearchAndGeocoding = useCallback(async (business: Business) => {
     try {
+      // Step 2: Use Place Details API for enrichment
+      const placeDetails = await getPlaceDetails(business.id);
+      
+      // Also run Gemini research for additional insights
       const researchedData = await researchBusiness(business.discoveryName, business.discoveryWebsite);
-      let coords;
-      if (researchedData.address && researchedData.address !== 'Not Found') {
-        coords = await geocodeAddress(researchedData.address);
-      }
+      
       setBusinesses(prev =>
         prev.map(b =>
           b.id === business.id
-            ? { ...b, ...researchedData, ...coords, isResearching: false }
+            ? { 
+                ...b, 
+                ...researchedData,
+                // Override with Places API data where available
+                websiteUri: placeDetails.websiteUri || b.discoveryWebsite,
+                phone: placeDetails.nationalPhoneNumber || b.phone,
+                address: placeDetails.formattedAddress || b.address,
+                rating: placeDetails.rating || 0,
+                userRatingCount: placeDetails.userRatingCount || 0,
+                isResearching: false 
+              }
             : b
         )
       );
@@ -47,50 +58,45 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleSearch = useCallback(async (location: string, businessType: string, numResults: string) => {
+  const handleSearch = useCallback(async (location: string, businessType: string, numResults: string, searchArea: SearchArea) => {
     setIsLoading(true);
     setError(null);
     setResearchMessage('Discovering businesses...');
 
-    const discoveredWebsitesThisRun = new Set<string>();
-
-    const onDiscovery = (discovery: { name: string; website: string; }) => {
-      setBusinesses(currentBusinesses => {
-        const alreadyExists = currentBusinesses.some(b => b.discoveryWebsite === discovery.website) || discoveredWebsitesThisRun.has(discovery.website);
-        
-        if (!discovery.website || alreadyExists) {
-            return currentBusinesses;
-        }
-        
-        discoveredWebsitesThisRun.add(discovery.website);
-
-        const newBusiness: Business = {
-          id: `${Date.now()}-${discovery.website}`,
-          discoveryName: discovery.name,
-          discoveryWebsite: discovery.website,
-          companyName: '',
-          contactName: '',
-          address: '',
-          phone: '',
-          email: '',
-          description: '',
-          status: BusinessStatus.DISCOVERED,
-          dateFound: new Date().toISOString().split('T')[0],
-          emailThreadId: 'N/A',
-          isResearching: true,
-          areaSearched: location,
-          businessType: businessType,
-        };
-        
-        processResearchAndGeocoding(newBusiness);
-        
-        return [...currentBusinesses, newBusiness];
-      });
-    };
-
     try {
-      await findBusinessesStream(location, businessType, numResults, onDiscovery);
-      setResearchMessage('Discovery stream complete. Research may still be in progress.');
+      // Step 1: Use Google Places API for discovery
+      const maxResults = numResults === 'ALL' ? 20 : parseInt(numResults, 10);
+      const places = await searchPlacesInArea(businessType, searchArea, maxResults);
+
+      // Convert Places API results to Business objects
+      const newBusinesses: Business[] = places.map((place) => ({
+        id: place.id,
+        discoveryName: place.displayName,
+        discoveryWebsite: place.websiteUri || '',
+        companyName: place.displayName,
+        contactName: '',
+        address: place.formattedAddress || '',
+        phone: place.nationalPhoneNumber || '',
+        email: '',
+        description: '',
+        status: BusinessStatus.DISCOVERED,
+        dateFound: new Date().toISOString().split('T')[0],
+        emailThreadId: 'N/A',
+        isResearching: false,
+        areaSearched: location,
+        businessType: businessType,
+        lat: place.location.latitude,
+        lng: place.location.longitude,
+      }));
+
+      setBusinesses(prev => {
+        // Filter out duplicates based on place ID
+        const existingIds = new Set(prev.map(b => b.id));
+        const uniqueNewBusinesses = newBusinesses.filter(b => !existingIds.has(b.id));
+        return [...prev, ...uniqueNewBusinesses];
+      });
+
+      setResearchMessage(`Found ${places.length} businesses. Select businesses to research or use "Research All" to enrich all results.`);
     } catch (err) {
       console.error(err);
       setError('An error occurred during discovery. Please check the console and try again.');
@@ -98,7 +104,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [processResearchAndGeocoding]);
+  }, []);
 
   const handleRetryResearch = useCallback(async (businessId: string) => {
     const businessToRetry = businesses.find(b => b.id === businessId);
@@ -172,10 +178,17 @@ const App: React.FC = () => {
     <div className="min-h-screen text-gray-800">
       <Header />
       <main className="container mx-auto p-4 md:p-8">
-        <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-lg mb-8">
+        <div className="max-w-7xl mx-auto bg-white p-8 rounded-2xl shadow-lg mb-8">
           <h2 className="text-xl font-bold text-gray-700 mb-2">Generate Business Leads</h2>
-          <p className="text-gray-500 mb-6">Enter a location and business type to start discovering and researching potential leads.</p>
-          <SearchForm onSearch={handleSearch} isLoading={isLoading} />
+          <p className="text-gray-500 mb-6">Select a location on the map and enter a business type to discover potential leads in that area.</p>
+          <MapSearchForm 
+            onSearch={handleSearch} 
+            isLoading={isLoading} 
+            apiKey={googleMapsApiKey || ''} 
+            businesses={businesses}
+            highlightedBusinessId={highlightedBusinessId}
+            onHighlight={setHighlightedBusinessId}
+          />
         </div>
 
         {error && (
@@ -188,26 +201,31 @@ const App: React.FC = () => {
         {(isLoading || businesses.length > 0) && (
           <div className="w-full mt-8">
              <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
-               <h3 className="text-lg font-semibold text-gray-700">{researchMessage}</h3>
-                <button
-                    onClick={exportToCsv}
-                    disabled={businesses.length === 0 || businesses.some(b => b.isResearching)}
-                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 self-end md:self-auto"
-                >
-                    Export to CSV
-                </button>
-            </div>
-            <div className="space-y-8">
-              {googleMapsApiKey && (
-                  <div className="w-full h-96 rounded-xl shadow-md overflow-hidden">
-                    <BusinessMap 
-                      apiKey={googleMapsApiKey} 
-                      businesses={businesses} 
-                      highlightedBusinessId={highlightedBusinessId}
-                      onHighlight={setHighlightedBusinessId}
-                    />
-                  </div>
-              )}
+                <h3 className="text-lg font-semibold text-gray-700">{researchMessage}</h3>
+                 <div className="flex gap-3 self-end md:self-auto">
+                   <button
+                       onClick={async () => {
+                         const toResearch = businesses.filter(b => !b.isResearching && b.status === BusinessStatus.DISCOVERED);
+                         for (const b of toResearch) {
+                           setBusinesses(prev => prev.map(x => x.id === b.id ? { ...x, isResearching: true } : x));
+                           await processResearchAndGeocoding({ ...b, isResearching: true });
+                         }
+                       }}
+                       disabled={businesses.length === 0 || businesses.every(b => b.status !== BusinessStatus.DISCOVERED)}
+                       className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                   >
+                       Research All
+                   </button>
+                   <button
+                       onClick={exportToCsv}
+                       disabled={businesses.length === 0 || businesses.some(b => b.isResearching)}
+                       className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                   >
+                       Export to CSV
+                   </button>
+                 </div>
+             </div>
+             <div className="space-y-8">
               <div className="w-full">
                 <BusinessTable 
                     businesses={businesses} 

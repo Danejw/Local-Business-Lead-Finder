@@ -7,14 +7,19 @@ export async function findBusinessesStream(
     location: string,
     businessType: string,
     numResults: string,
-    onDiscovery: (business: BusinessDiscovery) => void
+    onDiscovery: (business: BusinessDiscovery) => void,
+    coordinates?: { lat: number; lng: number }
 ): Promise<void> {
   try {
     const resultLimitText = numResults === 'ALL'
       ? `Provide a comprehensive list of all`
       : `List the top ${numResults}`;
 
-    const prompt = `${resultLimitText} ${businessType} in ${location}. For each business, provide only its name and official website URL. Stream each result as soon as you find it, formatted as a single line: Business Name | https://website.url. Do not add any other commentary, headers, or formatting.`;
+    const locationContext = coordinates 
+      ? `${location} (coordinates: ${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)})`
+      : location;
+    
+    const prompt = `${resultLimitText} ${businessType} in ${locationContext}. Focus on businesses within a reasonable distance of this specific location. For each business, provide only its name and official website URL. Stream each result as soon as you find it, formatted as a single line: Business Name | https://website.url. Do not add any other commentary, headers, or formatting.`;
 
     const responseStream = await ai.models.generateContentStream({
       model: "gemini-2.5-flash",
