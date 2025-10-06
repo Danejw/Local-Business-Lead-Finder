@@ -179,7 +179,7 @@ const App: React.FC = () => {
       <Header />
       <main className="container mx-auto p-4 md:p-8">
         <div className="max-w-7xl mx-auto bg-white p-8 rounded-2xl shadow-lg mb-8">
-          <h2 className="text-xl font-bold text-gray-700 mb-2">Generate Business Leads</h2>
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Finder Business Leads</h2>
           <p className="text-gray-500 mb-6">Select a location on the map and enter a business type to discover potential leads in that area.</p>
           <MapSearchForm 
             onSearch={handleSearch} 
