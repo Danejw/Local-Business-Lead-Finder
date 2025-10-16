@@ -122,6 +122,19 @@ const App: React.FC = () => {
 
   }, [businesses, processResearchAndGeocoding]);
 
+  const handleClearResults = useCallback(() => {
+    setBusinesses([]);
+    setResearchMessage('');
+    setHighlightedBusinessId(null);
+  }, []);
+
+  const handleDeleteBusiness = useCallback((businessId: string) => {
+    setBusinesses(prev => prev.filter(b => b.id !== businessId));
+    if (highlightedBusinessId === businessId) {
+      setHighlightedBusinessId(null);
+    }
+  }, [highlightedBusinessId]);
+
 
   const exportToCsv = () => {
     if (businesses.length === 0) return;
@@ -200,36 +213,43 @@ const App: React.FC = () => {
 
         {(isLoading || businesses.length > 0) && (
           <div className="w-full mt-8">
-             <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+            <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
                 <h3 className="text-lg font-semibold text-gray-700">{researchMessage}</h3>
-                 <div className="flex gap-3 self-end md:self-auto">
-                   <button
-                       onClick={async () => {
-                         const toResearch = businesses.filter(b => !b.isResearching && b.status === BusinessStatus.DISCOVERED);
-                         for (const b of toResearch) {
-                           setBusinesses(prev => prev.map(x => x.id === b.id ? { ...x, isResearching: true } : x));
-                           await processResearchAndGeocoding({ ...b, isResearching: true });
-                         }
-                       }}
-                       disabled={businesses.length === 0 || businesses.every(b => b.status !== BusinessStatus.DISCOVERED)}
-                       className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
-                   >
-                       Research All
-                   </button>
-                   <button
-                       onClick={exportToCsv}
-                       disabled={businesses.length === 0 || businesses.some(b => b.isResearching)}
-                       className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
-                   >
-                       Export to CSV
-                   </button>
-                 </div>
-             </div>
+                <div className="flex gap-3 self-end md:self-auto">
+                    <button
+                        onClick={handleClearResults}
+                        className="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-200"
+                    >
+                        Clear Results
+                    </button>
+                    <button
+                        onClick={async () => {
+                            const toResearch = businesses.filter(b => !b.isResearching && b.status === BusinessStatus.DISCOVERED);
+                            for (const b of toResearch) {
+                                setBusinesses(prev => prev.map(x => x.id === b.id ? { ...x, isResearching: true } : x));
+                                await processResearchAndGeocoding({ ...b, isResearching: true });
+                            }
+                        }}
+                        disabled={businesses.length === 0 || businesses.every(b => b.status !== BusinessStatus.DISCOVERED)}
+                        className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                    >
+                        Research All
+                    </button>
+                    <button
+                        onClick={exportToCsv}
+                        disabled={businesses.length === 0 || businesses.some(b => b.isResearching)}
+                        className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                    >
+                        Export to CSV
+                    </button>
+                </div>
+            </div>
              <div className="space-y-8">
               <div className="w-full">
                 <BusinessTable 
                     businesses={businesses} 
                     onRetryResearch={handleRetryResearch}
+                    onDeleteBusiness={handleDeleteBusiness}
                     highlightedBusinessId={highlightedBusinessId}
                     onHighlight={setHighlightedBusinessId}
                 />

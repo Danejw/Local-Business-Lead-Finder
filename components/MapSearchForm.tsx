@@ -98,15 +98,17 @@ export const MapSearchForm: React.FC<MapSearchFormProps> = ({ onSearch, isLoadin
               }
             });
 
-            // Update marker
+            // Update marker (make it draggable to reposition the search center)
             if (markerRef.current) {
               markerRef.current.setPosition({ lat, lng });
+              markerRef.current.setDraggable(true);
             } else {
               markerRef.current = new google.maps.Marker({
                 position: { lat, lng },
                 map: googleMap.current,
                 title: 'Selected Location',
                 animation: google.maps.Animation.DROP,
+                draggable: true,
                 icon: {
                   url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                     <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
@@ -117,6 +119,30 @@ export const MapSearchForm: React.FC<MapSearchFormProps> = ({ onSearch, isLoadin
                   scaledSize: new google.maps.Size(32, 32),
                   anchor: new google.maps.Point(16, 16)
                 }
+              });
+
+              // Live update area while dragging
+              markerRef.current.addListener('drag', () => {
+                const pos = markerRef.current?.getPosition();
+                if (!pos) return;
+                const dragLat = pos.lat();
+                const dragLng = pos.lng();
+                setSelectedCoordinates({ lat: dragLat, lng: dragLng });
+                updateSearchAreaVisualization({ lat: dragLat, lng: dragLng });
+              });
+
+              // On drag end, reverse geocode and finalize state
+              markerRef.current.addListener('dragend', () => {
+                const pos = markerRef.current?.getPosition();
+                if (!pos) return;
+                const endLat = pos.lat();
+                const endLng = pos.lng();
+                setSelectedCoordinates({ lat: endLat, lng: endLng });
+                geocoderRef.current?.geocode({ location: { lat: endLat, lng: endLng } }, (results, status) => {
+                  if (status === 'OK' && results && results[0]) {
+                    setSelectedLocation(results[0].formatted_address);
+                  }
+                });
               });
             }
 

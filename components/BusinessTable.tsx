@@ -6,6 +6,7 @@ import { Loader } from './Loader';
 interface BusinessTableProps {
   businesses: Business[];
   onRetryResearch: (businessId: string) => void;
+  onDeleteBusiness: (businessId: string) => void;
   highlightedBusinessId: string | null;
   onHighlight: (businessId: string | null) => void;
 }
@@ -14,7 +15,7 @@ const Shimmer: React.FC = () => (
     <div className="animate-pulse bg-gray-200 h-4 rounded-md w-full"></div>
 );
 
-export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetryResearch, highlightedBusinessId, onHighlight }) => {
+export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetryResearch, onDeleteBusiness, highlightedBusinessId, onHighlight }) => {
   if (businesses.length === 0) {
     return null;
   }
@@ -83,7 +84,19 @@ export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetr
             </div>
 
             {/* Footer / Actions */}
-            <div className="border-t border-gray-200 pt-3 flex justify-end items-center">
+            <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
+              <button 
+                onClick={() => onDeleteBusiness(business.id)}
+                className="flex items-center text-sm text-red-600 hover:text-red-800 font-semibold"
+                aria-label={`Delete ${business.companyName || business.discoveryName}`}
+                title="Delete Business"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                Delete
+              </button>
               {!business.isResearching && (
                 <button 
                   onClick={() => onRetryResearch(business.id)}
@@ -206,18 +219,31 @@ export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetr
                   {business.isResearching ? <Loader /> : <StatusBadge status={business.status} />}
                 </td>
                 <td className="px-6 py-4 align-top">
-                  {!business.isResearching && (
+                  <div className="flex space-x-2">
                     <button 
-                      onClick={() => onRetryResearch(business.id)}
-                      className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
-                      aria-label={`Retry research for ${business.companyName || business.discoveryName}`}
-                      title="Retry Research"
+                      onClick={() => onDeleteBusiness(business.id)}
+                      className="text-red-600 hover:text-red-800 transition-colors duration-150"
+                      aria-label={`Delete ${business.companyName || business.discoveryName}`}
+                      title="Delete Business"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                       </svg>
                     </button>
-                  )}
+                    {!business.isResearching && (
+                      <button 
+                        onClick={() => onRetryResearch(business.id)}
+                        className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
+                        aria-label={`Retry research for ${business.companyName || business.discoveryName}`}
+                        title="Retry Research"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
