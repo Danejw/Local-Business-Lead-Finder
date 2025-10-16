@@ -354,7 +354,7 @@ export const MapSearchForm: React.FC<MapSearchFormProps> = ({ onSearch, isLoadin
                   id="radius"
                   type="range"
                   min={0.5}
-                  max={10}
+                  max={100}
                   step={0.5}
                   value={radiusKm}
                   onChange={(e) => setRadiusKm(parseFloat(e.target.value))}

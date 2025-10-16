@@ -36,5 +36,6 @@ export interface ResearchedBusinessData {
     address: string;
     phone: string;
     email: string;
+    website: string;
     description: string;
 }

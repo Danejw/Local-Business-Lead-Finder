@@ -162,7 +162,7 @@ export async function searchPlacesInArea(
   maxResults: number = 20
 ): Promise<PlaceSearchResult[]> {
   const placeTypes = getPlaceTypes(businessType);
-  const fieldMask = 'places.id,places.displayName,places.location,places.primaryType,places.formattedAddress';
+  const fieldMask = 'places.id,places.displayName,places.location,places.primaryType,places.formattedAddress,places.websiteUri,places.nationalPhoneNumber';
 
   let results: PlaceSearchResult[] = [];
 
@@ -192,6 +192,8 @@ export async function searchPlacesInArea(
         location: place.location,
         primaryType: place.primaryType || '',
         formattedAddress: place.formattedAddress || '',
+        websiteUri: place.websiteUri || '',
+        nationalPhoneNumber: place.nationalPhoneNumber || '',
       }));
     }
   } else if (searchArea.type === 'rectangle' && searchArea.rectangle) {
@@ -222,6 +224,8 @@ export async function searchPlacesInArea(
         location: place.location,
         primaryType: place.primaryType || '',
         formattedAddress: place.formattedAddress || '',
+        websiteUri: place.websiteUri || '',
+        nationalPhoneNumber: place.nationalPhoneNumber || '',
       }));
     }
   }

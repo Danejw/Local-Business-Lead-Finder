@@ -35,8 +35,8 @@ const App: React.FC = () => {
             ? { 
                 ...b, 
                 ...researchedData,
-                // Override with Places API data where available
-                websiteUri: placeDetails.websiteUri || b.discoveryWebsite,
+                // Override with Places API data where available, but prioritize researched website
+                discoveryWebsite: researchedData.website || placeDetails.websiteUri || b.discoveryWebsite,
                 phone: placeDetails.nationalPhoneNumber || b.phone,
                 address: placeDetails.formattedAddress || b.address,
                 rating: placeDetails.rating || 0,
@@ -137,7 +137,12 @@ const App: React.FC = () => {
 
 
   const exportToCsv = () => {
-    if (businesses.length === 0) return;
+    if (businesses.length === 0) {
+      console.log('No businesses to export');
+      return;
+    }
+
+    console.log(`Exporting ${businesses.length} businesses to CSV`);
 
     const headers = [
       'Company Name',
@@ -152,39 +157,69 @@ const App: React.FC = () => {
       'Email Thread ID',
       'Area Searched',
       'Business Type',
+      'Latitude',
+      'Longitude'
     ];
 
     const rows = businesses.map(b => [
-      b.companyName,
-      b.contactName,
-      b.address,
-      b.phone,
-      b.email,
-      b.discoveryWebsite,
-      b.description,
-      b.status,
-      b.dateFound,
-      b.emailThreadId,
-      b.areaSearched,
-      b.businessType,
+      b.companyName || b.discoveryName || '',
+      b.contactName || '',
+      b.address || '',
+      b.phone || '',
+      b.email || '',
+      b.discoveryWebsite || '',
+      b.description || '',
+      b.status || '',
+      b.dateFound || '',
+      b.emailThreadId || '',
+      b.areaSearched || '',
+      b.businessType || '',
+      b.lat || '',
+      b.lng || ''
     ]);
 
-    const escapeCsvCell = (cell: string) => `"${cell ? cell.replace(/"/g, '""') : ''}"`;
+    console.log('CSV rows to export:', rows.length);
 
-    let csvContent = "data:text/csv;charset=utf-8,";
+    const escapeCsvCell = (cell: any) => {
+      if (cell === null || cell === undefined) return '""';
+      const cellStr = String(cell);
+      return `"${cellStr.replace(/"/g, '""')}"`;
+    };
+
+    // Create CSV content with proper BOM for Excel compatibility
+    let csvContent = '\uFEFF'; // BOM for UTF-8
     csvContent += headers.map(escapeCsvCell).join(',') + '\r\n';
-    rows.forEach(rowArray => {
+    
+    rows.forEach((rowArray, index) => {
       const row = rowArray.map(escapeCsvCell).join(',');
       csvContent += row + '\r\n';
+      console.log(`Row ${index + 1}:`, rowArray);
     });
 
-    const encodedUri = encodeURI(csvContent);
+    console.log('Final CSV content length:', csvContent.length);
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'business_leads.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `business_leads_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      // Fallback for older browsers
+      const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `business_leads_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (

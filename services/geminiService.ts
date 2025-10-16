@@ -91,12 +91,16 @@ const researchSchema = {
             type: Type.STRING,
             description: "A publicly listed contact email address suitable for outreach (e.g., owner, manager). Prioritize specific contacts over generic ones like 'info@'. If not found, state 'Not Found'."
         },
+        website: {
+            type: Type.STRING,
+            description: "The official business website URL. If not found, state 'Not Found'."
+        },
         description: {
             type: Type.STRING,
             description: "A comprehensive, professional paragraph describing the business, its core services/products, mission, and its typical customer base. This should be an in-depth summary for a business analyst."
         }
     },
-    required: ["companyName", "contactName", "address", "phone", "email", "description"]
+    required: ["companyName", "contactName", "address", "phone", "email", "website", "description"]
 };
 
 
@@ -104,7 +108,12 @@ export async function researchBusiness(businessName: string, businessWebsite: st
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Act as a world-class business research analyst. Conduct deep research on the company "${businessName}" with the website "${businessWebsite}". Your primary goal is to find a specific contact email address suitable for outreach (e.g., owner, manager, marketing department), avoiding generic emails like 'info@' or 'contact@' if possible. Additionally, provide a comprehensive, professional paragraph describing the business, its core services or products, its mission, and its typical customer base. Populate all fields in the provided JSON schema with the most accurate information you can find.`,
+            contents: `Act as a world-class business research analyst. Conduct deep research on the company "${businessName}" with the website "${businessWebsite}". Your primary goals are:
+1. Find the official business website URL (if different from the provided one, use the most current/official one)
+2. Find a specific contact email address suitable for outreach (e.g., owner, manager, marketing department), avoiding generic emails like 'info@' or 'contact@' if possible
+3. Provide a comprehensive, professional paragraph describing the business, its core services or products, its mission, and its typical customer base
+
+Use the provided website "${businessWebsite}" as a starting point, but verify and find the most current official website if available. Populate all fields in the provided JSON schema with the most accurate information you can find.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: researchSchema,

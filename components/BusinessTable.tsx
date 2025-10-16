@@ -3,6 +3,19 @@ import { Business } from '../types';
 import { StatusBadge } from './StatusBadge';
 import { Loader } from './Loader';
 
+// Utility function to truncate URLs
+const truncateUrl = (url: string, maxLength: number = 40): string => {
+  if (!url) return '';
+  if (url.length <= maxLength) return url;
+  
+  // Remove protocol for cleaner display
+  const cleanUrl = url.replace(/^https?:\/\//, '');
+  if (cleanUrl.length <= maxLength) return cleanUrl;
+  
+  // Truncate and add ellipsis
+  return cleanUrl.substring(0, maxLength - 3) + '...';
+};
+
 interface BusinessTableProps {
   businesses: Business[];
   onRetryResearch: (businessId: string) => void;
@@ -39,8 +52,14 @@ export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetr
               <div className="flex-grow pr-4">
                 <p className="text-base font-bold text-gray-900 break-words">{business.companyName || business.discoveryName}</p>
                 {business.discoveryWebsite && (
-                  <a href={business.discoveryWebsite} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline break-all">
-                    {business.discoveryWebsite}
+                  <a 
+                    href={business.discoveryWebsite} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-xs text-blue-600 hover:underline break-all"
+                    title={business.discoveryWebsite}
+                  >
+                    {truncateUrl(business.discoveryWebsite, 50)}
                   </a>
                 )}
               </div>
@@ -169,7 +188,7 @@ export const BusinessTable: React.FC<BusinessTableProps> = ({ businesses, onRetr
                             className="hover:text-blue-600 hover:underline"
                             title={business.discoveryWebsite}
                           >
-                            {business.discoveryWebsite}
+                            {truncateUrl(business.discoveryWebsite)}
                           </a>
                         </div>
                       )}
